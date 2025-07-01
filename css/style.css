@@ -1,0 +1,4 @@
+/* Usando a fonte Inter para uma aparência mais limpa em todo o corpo da página */
+body {
+    font-family: 'Inter', sans-serif;
+}

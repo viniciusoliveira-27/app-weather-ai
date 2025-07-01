@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App de Clima Avançado</title>
+    <!-- Incluindo o Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo a biblioteca de ícones Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Links para a fonte Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-image 0.8s ease-in-out;
+        }
+        /* Estilos para os fundos dinâmicos */
+        .bg-sunny { background-image: url('https://images.unsplash.com/photo-1622396481328-9b1b78cdd9fd?q=80&w=2070&auto=format&fit=crop'); }
+        .bg-cloudy { background-image: url('https://images.unsplash.com/photo-1499956827185-0d63ee78a910?q=80&w=1974&auto=format&fit=crop'); }
+        .bg-rainy { background-image: url('https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?q=80&w=1935&auto=format&fit=crop'); }
+        .bg-foggy { background-image: url('https://images.unsplash.com/photo-1487621167305-5d248087c883?q=80&w=2070&auto=format&fit=crop'); }
+        .bg-snowy { background-image: url('https://images.unsplash.com/photo-1491002052546-bf38f186af56?q=80&w=2108&auto=format&fit=crop'); }
+        .bg-default { background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2071&auto=format&fit=crop'); }
+        
+        body {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        /* Efeito de vidro fosco nos cards */
+        .card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-default text-white">
+
+    <main class="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8">
+        <!-- Container principal -->
+        <div class="w-full max-w-5xl">
+            <h1 class="text-3xl sm:text-4xl font-bold text-center mb-2 text-shadow">Previsão do Tempo</h1>
+            <p class="text-center mb-6 text-shadow-sm">Insira uma ou mais cidades (separadas por vírgula)</p>
+
+            <!-- Seção de entrada -->
+            <div class="flex flex-col sm:flex-row gap-2 mb-8 max-w-xl mx-auto">
+                <input type="text" id="cityInput" placeholder="Ex: São Paulo, Lisboa, Tóquio" class="flex-grow px-4 py-3 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 transition text-gray-800">
+                <button id="searchButton" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50 transition font-bold shadow-lg">
+                    <i class="ph ph-magnifying-glass"></i> Buscar
+                </button>
+            </div>
+
+            <!-- Container para os resultados -->
+            <div id="weatherResultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards do clima serão inseridos aqui -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Selecionando os elementos do DOM
+        const cityInput = document.getElementById('cityInput');
+        const searchButton = document.getElementById('searchButton');
+        const weatherResultsContainer = document.getElementById('weatherResultsContainer');
+        const body = document.body;
+
+        // --- FUNÇÕES DE MAPEAMENTO E CONVERSÃO ---
+
+        function getWeatherDetails(code) {
+            const details = {
+                0: { desc: 'Céu limpo', icon: 'ph-sun', bg: 'bg-sunny' },
+                1: { desc: 'Quase limpo', icon: 'ph-cloud-sun', bg: 'bg-sunny' },
+                2: { desc: 'Parcialmente nublado', icon: 'ph-cloud-sun', bg: 'bg-cloudy' },
+                3: { desc: 'Nublado', icon: 'ph-cloud', bg: 'bg-cloudy' },
+                45: { desc: 'Nevoeiro', icon: 'ph-cloud-fog', bg: 'bg-foggy' },
+                48: { desc: 'Nevoeiro com geada', icon: 'ph-cloud-fog', bg: 'bg-foggy' },
+                51: { desc: 'Chuvisco leve', icon: 'ph-drizzle', bg: 'bg-rainy' },
+                53: { desc: 'Chuvisco moderado', icon: 'ph-drizzle', bg: 'bg-rainy' },
+                55: { desc: 'Chuvisco denso', icon: 'ph-drizzle', bg: 'bg-rainy' },
+                61: { desc: 'Chuva leve', icon: 'ph-rain', bg: 'bg-rainy' },
+                63: { desc: 'Chuva moderada', icon: 'ph-rain', bg: 'bg-rainy' },
+                65: { desc: 'Chuva forte', icon: 'ph-rain', bg: 'bg-rainy' },
+                80: { desc: 'Pancadas de chuva leves', icon: 'ph-showers', bg: 'bg-rainy' },
+                81: { desc: 'Pancadas de chuva moderadas', icon: 'ph-showers', bg: 'bg-rainy' },
+                82: { desc: 'Pancadas de chuva violentas', icon: 'ph-showers', bg: 'bg-rainy' },
+                95: { desc: 'Trovoada', icon: 'ph-cloud-lightning', bg: 'bg-rainy' },
+            };
+            return details[code] || { desc: 'Condição desconhecida', icon: 'ph-question', bg: 'bg-default' };
+        }
+        
+        function getDayOfWeek(dateString) {
+            const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            const date = new Date(dateString + 'T00:00:00'); // Adiciona T00:00:00 para evitar problemas de fuso horário
+            return days[date.getUTCDay()];
+        }
+
+
+        // --- FUNÇÃO PRINCIPAL DE BUSCA ---
+
+        async function getWeatherForCity(cityName) {
+            // 1. Geocodificação
+            const geoApiUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=pt&format=json`;
+            const geoResponse = await fetch(geoApiUrl);
+            if (!geoResponse.ok) throw new Error('Falha na busca por geolocalização.');
+            const geoData = await geoResponse.json();
+            if (!geoData.results) throw new Error(`Cidade "${cityName}" não encontrada.`);
+
+            const location = geoData.results[0];
+            const { latitude, longitude, name: foundCityName, admin1, country } = location;
+
+            // 2. Busca do Clima (Atual + Previsão 5 dias + Dados Adicionais)
+            const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`;
+            const weatherResponse = await fetch(weatherApiUrl);
+            if (!weatherResponse.ok) throw new Error('Falha na busca por dados do clima.');
+            const weatherData = await weatherResponse.json();
+
+            return {
+                location: { city: foundCityName, state: admin1, country },
+                current: weatherData.current,
+                daily: weatherData.daily,
+            };
+        }
+
+        // --- FUNÇÕES DE EXIBIÇÃO NA TELA ---
+
+        function createWeatherCard(data) {
+            const { location, current, daily } = data;
+            const weatherDetails = getWeatherDetails(current.weather_code);
+
+            // Monta o HTML do card
+            const card = document.createElement('div');
+            card.className = 'card p-6 rounded-2xl shadow-lg flex flex-col text-white';
+            
+            // Seção do tempo atual
+            let currentHtml = `
+                <div class="flex-grow">
+                    <h2 class="text-2xl font-bold">${location.city}</h2>
+                    <p class="text-sm opacity-80">${location.state || ''} - ${location.country}</p>
+                    <div class="flex items-center my-4">
+                        <i class="${weatherDetails.icon} text-7xl"></i>
+                        <div class="ml-4">
+                            <p class="text-5xl font-bold">${Math.round(current.temperature_2m)}°C</p>
+                            <p class="font-semibold">${weatherDetails.desc}</p>
+                        </div>
+                    </div>
+                    <!-- Detalhes Adicionais -->
+                    <div class="grid grid-cols-3 gap-4 text-center text-sm mt-6">
+                        <div>
+                            <i class="ph ph-drop text-2xl"></i>
+                            <p>${current.relative_humidity_2m}%</p>
+                            <p class="opacity-80 text-xs">Umidade</p>
+                        </div>
+                        <div>
+                            <i class="ph ph-cloud-rain text-2xl"></i>
+                            <p>${current.precipitation} mm</p>
+                            <p class="opacity-80 text-xs">Precipitação</p>
+                        </div>
+                        <div>
+                            <i class="ph ph-wind text-2xl"></i>
+                            <p>${current.wind_speed_10m.toFixed(1)} km/h</p>
+                            <p class="opacity-80 text-xs">Vento</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Seção da previsão para 5 dias
+            let forecastHtml = `<div class="mt-8 pt-4 border-t border-white border-opacity-30">
+                                    <h3 class="font-bold text-center mb-2">Próximos 5 dias</h3>
+                                    <div class="flex justify-between text-center">`;
+
+            for (let i = 0; i < 5; i++) {
+                const day = daily.time[i];
+                const dayWeather = getWeatherDetails(daily.weather_code[i]);
+                forecastHtml += `
+                    <div>
+                        <p class="font-semibold">${getDayOfWeek(day)}</p>
+                        <i class="${dayWeather.icon} text-3xl my-1"></i>
+                        <p class="text-sm">${Math.round(daily.temperature_2m_max[i])}°/${Math.round(daily.temperature_2m_min[i])}°</p>
+                    </div>
+                `;
+            }
+            forecastHtml += `</div></div>`;
+
+            card.innerHTML = currentHtml + forecastHtml;
+            weatherResultsContainer.appendChild(card);
+            
+            return weatherDetails.bg; // Retorna a classe de fundo para a primeira cidade
+        }
+
+        function createErrorCard(cityName, message) {
+            const card = document.createElement('div');
+            card.className = 'card p-6 rounded-2xl shadow-lg text-white';
+            card.innerHTML = `
+                <h2 class="text-2xl font-bold">${cityName}</h2>
+                <div class="mt-4">
+                    <i class="ph ph-warning-circle text-5xl text-yellow-300"></i>
+                    <p class="mt-2 font-semibold">Não foi possível buscar o clima</p>
+                    <p class="text-sm opacity-80">${message}</p>
+                </div>
+            `;
+            weatherResultsContainer.appendChild(card);
+        }
+
+        // --- FUNÇÃO PRINCIPAL QUE ORQUESTRA TUDO ---
+
+        async function handleSearch() {
+            const cities = cityInput.value.split(',').map(city => city.trim()).filter(city => city);
+            if (cities.length === 0) return;
+
+            weatherResultsContainer.innerHTML = '<div class="text-center text-lg col-span-full">Buscando...</div>';
+            
+            let firstBgClass = 'bg-default';
+            let isFirst = true;
+
+            // Limpa o container antes de novas buscas
+            weatherResultsContainer.innerHTML = '';
+            
+            for (const city of cities) {
+                try {
+                    const weatherData = await getWeatherForCity(city);
+                    const bgClass = createWeatherCard(weatherData);
+                    if (isFirst) {
+                        firstBgClass = bgClass;
+                        isFirst = false;
+                    }
+                } catch (error) {
+                    console.error(`Erro ao buscar ${city}:`, error);
+                    createErrorCard(city, error.message);
+                }
+            }
+            
+            // Atualiza o fundo do body com base na primeira cidade da lista
+            body.className = ''; // Limpa classes antigas
+            body.classList.add(firstBgClass);
+        }
+
+        // Adiciona os eventos
+        searchButton.addEventListener('click', handleSearch);
+        cityInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+    </script>
+</body>
+</html>
