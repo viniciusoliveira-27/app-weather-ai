@@ -1,4 +1,4 @@
-# App de Clima Avançado
+# App Weather AI
 
 ## 📖 Sobre o Projeto
 
@@ -36,7 +36,7 @@ Para executar este projeto localmente, siga os passos abaixo:
 
 1. **Clone o Repositório**:
    ```bash
-   git clone [https://github.com/viniciusoliveira-27/app-weather-ai](https://github.com/viniciusoliveira-27/app-weather-ai)
+   git clone https://github.com/viniciusoliveira-27/app-weather-ai
    ```
 
 
